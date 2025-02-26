@@ -58,8 +58,13 @@ export const MicrophoneVisualizer = () => {
   const [currentTheme, setCurrentTheme] = useState<keyof typeof visualizerThemes>('classic');
   const [currentWaveform, setCurrentWaveform] = useState<keyof typeof waveformTypes>('bars');
 
-  useEffect(() => {
+  const initializeWaveSurfer = () => {
     if (!containerRef.current) return;
+
+    // Cleanup previous instance if it exists
+    if (wavesurferRef.current) {
+      wavesurferRef.current.destroy();
+    }
 
     wavesurferRef.current = WaveSurfer.create({
       container: containerRef.current,
@@ -72,8 +77,21 @@ export const MicrophoneVisualizer = () => {
 
     recordRef.current = wavesurferRef.current.registerPlugin(RecordPlugin.create());
 
+    // If we were recording, restart the recording
+    if (isRecording) {
+      recordRef.current.startRecording().catch((error: any) => {
+        console.error('Error restarting recording:', error);
+        setIsRecording(false);
+      });
+    }
+  };
+
+  useEffect(() => {
+    initializeWaveSurfer();
     return () => {
-      wavesurferRef.current?.destroy();
+      if (wavesurferRef.current) {
+        wavesurferRef.current.destroy();
+      }
     };
   }, [currentWaveform]);
 
@@ -110,6 +128,16 @@ export const MicrophoneVisualizer = () => {
       title: "Recording stopped",
       description: "Your microphone is now inactive",
     });
+  };
+
+  const handleWaveformChange = (type: keyof typeof waveformTypes) => {
+    if (isRecording) {
+      stopRecording().then(() => {
+        setCurrentWaveform(type);
+      });
+    } else {
+      setCurrentWaveform(type);
+    }
   };
 
   return (
@@ -154,7 +182,7 @@ export const MicrophoneVisualizer = () => {
                     <Button
                       key={type}
                       variant={currentWaveform === type ? "default" : "outline"}
-                      onClick={() => setCurrentWaveform(type)}
+                      onClick={() => handleWaveformChange(type)}
                       className="capitalize"
                     >
                       {type}
