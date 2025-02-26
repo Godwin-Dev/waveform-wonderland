@@ -25,12 +25,38 @@ const visualizerThemes = {
   }
 };
 
+const waveformTypes = {
+  bars: {
+    barWidth: 2,
+    barGap: 3,
+    barRadius: 3,
+    wave: false,
+  },
+  line: {
+    barWidth: 0,
+    wave: true,
+  },
+  points: {
+    barWidth: 1,
+    barGap: 4,
+    barRadius: 50,
+    wave: false,
+  },
+  rounded: {
+    barWidth: 3,
+    barGap: 2,
+    barRadius: 30,
+    wave: false,
+  }
+};
+
 export const MicrophoneVisualizer = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const wavesurferRef = useRef<WaveSurfer | null>(null);
   const recordRef = useRef<any>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [currentTheme, setCurrentTheme] = useState<keyof typeof visualizerThemes>('classic');
+  const [currentWaveform, setCurrentWaveform] = useState<keyof typeof waveformTypes>('bars');
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -41,9 +67,7 @@ export const MicrophoneVisualizer = () => {
       progressColor: visualizerThemes[currentTheme].progressColor,
       cursorColor: visualizerThemes[currentTheme].cursorColor,
       height: 200,
-      barWidth: 2,
-      barGap: 3,
-      barRadius: 3,
+      ...waveformTypes[currentWaveform],
     });
 
     recordRef.current = wavesurferRef.current.registerPlugin(RecordPlugin.create());
@@ -51,7 +75,7 @@ export const MicrophoneVisualizer = () => {
     return () => {
       wavesurferRef.current?.destroy();
     };
-  }, []);
+  }, [currentWaveform]);
 
   useEffect(() => {
     if (!wavesurferRef.current) return;
@@ -103,7 +127,7 @@ export const MicrophoneVisualizer = () => {
             
             <div ref={containerRef} className="w-full h-[200px] transition-all duration-500 ease-in-out" />
             
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="space-x-2">
                 <Button
                   onClick={isRecording ? stopRecording : startRecording}
@@ -124,17 +148,32 @@ export const MicrophoneVisualizer = () => {
                 </Button>
               </div>
               
-              <div className="flex gap-2">
-                {(Object.keys(visualizerThemes) as (keyof typeof visualizerThemes)[]).map((theme) => (
-                  <Button
-                    key={theme}
-                    variant={currentTheme === theme ? "default" : "outline"}
-                    onClick={() => setCurrentTheme(theme)}
-                    className="capitalize"
-                  >
-                    {theme}
-                  </Button>
-                ))}
+              <div className="flex flex-wrap gap-2">
+                <div className="flex gap-2 mr-4">
+                  {(Object.keys(waveformTypes) as (keyof typeof waveformTypes)[]).map((type) => (
+                    <Button
+                      key={type}
+                      variant={currentWaveform === type ? "default" : "outline"}
+                      onClick={() => setCurrentWaveform(type)}
+                      className="capitalize"
+                    >
+                      {type}
+                    </Button>
+                  ))}
+                </div>
+                
+                <div className="flex gap-2">
+                  {(Object.keys(visualizerThemes) as (keyof typeof visualizerThemes)[]).map((theme) => (
+                    <Button
+                      key={theme}
+                      variant={currentTheme === theme ? "default" : "outline"}
+                      onClick={() => setCurrentTheme(theme)}
+                      className="capitalize"
+                    >
+                      {theme}
+                    </Button>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
